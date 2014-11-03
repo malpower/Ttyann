@@ -44,11 +44,21 @@ Ttyann.addGrammer("*我叫*",function(content,person,res,finder,args)
     person.name=args[1];
     res.response("你好呀"+person.name);
 });
+Ttyann.addGrammer("我叫*",function(content,person,res,finder,args)
+{
+    var rlt=finder("你好，我叫"+args[0]);
+    rlt.fn(content,person,res,finder,rlt.stack);
+});
 Ttyann.addGrammer("*是*",function(content,person,res,finder,args)
 {
+    if (args.length!=2)
+    {
+        res.response("是什么呀！！");
+        return;
+    }
     args[0]=args[0].replace(/你/g,"我");
     args[0]=args[0].replace(/我/g,person.name);
-    if (args[1].indexOf("什么")==-1 && args[1].indexOf("啥")==-1 && args[1].indexOf("谁")==-1)
+    if (args[1].indexOf("什么")==-1 && args[1].indexOf("啥")==-1 && args[1].indexOf("谁")==-1 && args[1].indexOf("多少")==-1)
     {
         knownMap[args[0]]=args[1];
         res.response("谢谢你告诉我~");
@@ -71,79 +81,137 @@ Ttyann.addGrammer("*是*",function(content,person,res,finder,args)
 });
 
 
-Ttyann.addGrammer("*在*",function(content,person,res,finder,args)
+var whoMap=new Object;
+Ttyann.addGrammer("*找*",function(content,person,res,finder,args)
 {
+    if (args.length!=2)
+    {
+        res.response("找什么呀！！");
+        return;
+    }
     args[0]=args[0].replace(/你/g,"我");
     args[0]=args[0].replace(/我/g,person.name);
-    if (args[1].indexOf("哪里")==-1 && args[1].indexOf("哪")==-1)
+    if (args[1].indexOf("什么")==-1 && args[1].indexOf("啥")==-1 && args[1].indexOf("谁")==-1 && args[1].indexOf("多少")==-1)
     {
-        knownMap[args[0]]=args[1];
+        whoMap[args[0]]=args[1];
         res.response("谢谢你告诉我~");
         return;
     }
     else
     {
-        if (typeof(knownMap[args[0]])!="string")
+        if (typeof(whoMap[args[0]])!="string")
         {
             res.response("我不知道耶，傻傻分不清~");
             return;
         }
         else
         {
-            res.response(args[0]+"在"+knownMap[args[0]]);
+            res.response(args[0]+"是"+whoMap[args[0]]);
             return;
         }
     }
     res.response("啦啦，我傻了~");
 });
 
+var whereMap=new Object;
+Ttyann.addGrammer("*在*",function(content,person,res,finder,args)
+{
+    args[0]=args[0].replace(/你/g,"我");
+    args[0]=args[0].replace(/我/g,person.name);
+    if (args[1].indexOf("哪里")==-1 && args[1].indexOf("哪")==-1 && args[1].indexOf("什么地方")==-1)
+    {
+        whereMap[args[0]]=args[1];
+        res.response("好的，我知道了！~");
+        return;
+    }
+    else
+    {
+        if (typeof(whereMap[args[0]])!="string")
+        {
+            res.response("我不知道耶，傻傻分不清~");
+            return;
+        }
+        else
+        {
+            res.response(args[0]+"在"+whereMap[args[0]]);
+            return;
+        }
+    }
+    res.response("啦啦，我傻了~");
+});
+
+
+Ttyann.addGrammer("*我*电脑坏*",function(content,person,res,finder,args)
+{
+    res.response("哪一方面的电脑问题呢？T酱虽然笨笨的，但是也会开动酷睿i7的小脑瓜为"+(person.name?person.name:"您")+"解答的!FIGHT!");
+});
+
+Ttyann.addGrammer("*我*电脑出问题*",function(content,person,res,finder,args)
+{
+    res.response("哪一方面的电脑问题呢？T酱虽然笨笨的，但是也会开动酷睿i7的小脑瓜为"+(person.name?person.name:"您")+"解答的!FIGHT!");
+}).addGrammer("*我*电脑有问题*",function(content,person,res,finder,args)
+{
+    res.response("哪一方面的电脑问题呢？T酱虽然笨笨的，但是也会开动酷睿i7的小脑瓜为"+(person.name?person.name:"您")+"解答的!FIGHT!");
+});
+
+
+
 Ttyann.showTree();
 
         
 
-var x=new Ttyann.Ttyann("malpower");
-x.setDefaultResponser(function(content,person,res,finder)
-{
-    res.response("DEFAULT!");
-});
+var robotList=new Object;
+
+
+
+var wechat=require("node-wechat")("malJJ");
+
+
+
+    
 
 var server=http.createServer(function(req,res)
-{
-    if (req.url=="/")
+{ 
+    wechat.checkSignature(req, res);
+    wechat.handler(req, res);
+    wechat.text(function(msg)
     {
-        res.end(indexPage);
-        return;
-    }
-    if (req.url=="/ask")
-    {
-        x.bindOutput(function(content)
+        var un=msg.FromUserName;
+        var robot;
+        if (robotList[un]!=undefined)
         {
-            res.end(content);
+            robot=robotList[un];
+        }
+        else
+        {
+            robot=new Ttyann.Ttyann(un);
+            robotList[un]=robot;
+            robot.setDefaultResponser(function(content)
+            {
+                wechat.send({FromUserName: msg.ToUserName,
+                             ToUserName: msg.FromUserName,
+                             CreateTime: (new Date).getTime(),
+                             MsgType: "text",
+                             Content: "DEFAULT"});
+            });
+        }
+        robot.bindOutput(function(content)
+        {
+            wechat.send({FromUserName: msg.ToUserName,
+                         ToUserName: msg.FromUserName,
+                         CreateTime: (new Date).getTime(),
+                         MsgType: "text",
+                         Content: content});
         });
-        var buff=new Buffer(0);
-        req.on("data",function(chunk)
-        {
-            buff=Buffer.concat([buff,chunk]);
-        }).on("end",function()
-        {
-            var o=qs.parse(buff.toString("utf8"));
-            var o=o.ask;
-            res.writeHead(200,{"content-type": "text/html;charset=utf-8"});
-            x.tell(o);
-        }).on("error",function(err)
-        {
-            console.log(err);
-        });
-    }
-    else
-    {
-        res.end("404");
-    }
+        robot.tell(msg.Content);
+    });
 });
 
-server.listen(8811);
+server.listen(80);
 
 
+
+                                    
 
 
         

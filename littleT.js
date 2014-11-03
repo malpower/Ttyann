@@ -13,8 +13,6 @@ function FindResponser(content,node,index,stamp,stack,elem)
     stack=stack || (new Array);
     stack=JSON.parse(JSON.stringify(stack));
     var rlt;
-    console.log(node);
-    console.log("~~~~~~"+content[index]);
     if (index==content.length)
     {
         if (typeof(node.responser)!="function")
@@ -25,11 +23,9 @@ function FindResponser(content,node,index,stamp,stack,elem)
             }
             node=node["*"];
         }
-        console.log(stack+"|||||"+elem);
         if (elem!=undefined)
         {
             stack.push(elem);
-            console.log(stack+"|||||"+elem);
         }
         return {found: true,fn: node.responser,stack: stack};
     }
@@ -69,10 +65,16 @@ function FindResponser(content,node,index,stamp,stack,elem)
     }
     if (node["*"]!=undefined)
     {
-        console.log("HERERERERERERER");
-        elem=new String;
-        elem+=content[index];
-        rlt=FindResponser(content,node["*"],index+1,"*",stack,elem);
+        if (node["*"][content[index]]!=undefined)
+        {
+            rlt=FindResponser(content,node["*"],index,"*",stack,elem);
+        }
+        else
+        {
+            elem=new String;
+            elem+=content[index];
+            rlt=FindResponser(content,node["*"],index+1,"*",stack,elem);
+        }
         if (rlt.found==true)
         {
             return rlt;
@@ -97,7 +99,6 @@ function LT(who)
     this.target=who;
     this.tell=function(content)
     {
-        console.log("=======================");
         if (typeof(res.context)=="function")
         {
             return res.context(content,person,res,FindResponser);
@@ -107,7 +108,6 @@ function LT(who)
         {
             return DefaultResponser(content,person,res,FindResponser);
         }
-        console.log(rlt);
         return rlt.fn(content,person,res,FindResponser,rlt.stack);
     };
     this.bindOutput=function(fn)
@@ -130,6 +130,7 @@ module.exports={Ttyann: LT,addGrammer: function(sentence,fn)
     }
     args.push(fn);
     gTree.addGrammer.apply(this,args);
+    return this;
 },showTree: function()
 {
     console.log(gTree.tree);
