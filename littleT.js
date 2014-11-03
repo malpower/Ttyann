@@ -13,7 +13,7 @@ function FindResponser(content,node,index,stamp,stack,elem)
     stack=stack || (new Array);
     stack=JSON.parse(JSON.stringify(stack));
     var rlt;
-    if (index==content.length)
+    if (index>=content.length)
     {
         if (typeof(node.responser)!="function")
         {
@@ -29,6 +29,8 @@ function FindResponser(content,node,index,stamp,stack,elem)
         }
         return {found: true,fn: node.responser,stack: stack};
     }
+    console.log(node);
+    console.log(content[index]);
     for (var x in node)
     {
         if (x==content[index])
@@ -65,16 +67,9 @@ function FindResponser(content,node,index,stamp,stack,elem)
     }
     if (node["*"]!=undefined)
     {
-        if (node["*"][content[index]]!=undefined)
-        {
-            rlt=FindResponser(content,node["*"],index,"*",stack,elem);
-        }
-        else
-        {
-            elem=new String;
-            elem+=content[index];
-            rlt=FindResponser(content,node["*"],index+1,"*",stack,elem);
-        }
+        elem=new String;
+        elem+=content[index];
+        rlt=FindResponser(content,node["*"],index+1,"*",stack,elem);
         if (rlt.found==true)
         {
             return rlt;

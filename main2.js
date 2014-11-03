@@ -205,49 +205,41 @@ var wechat=require("node-wechat")("malJJ");
 
 
     
-
+var x=new Ttyann.Ttyann("malpower");
 var server=http.createServer(function(req,res)
 { 
-    wechat.checkSignature(req, res);
-    wechat.handler(req, res);
-    wechat.text(function(msg)
+    if (req.url=="/")
     {
-        var un=msg.FromUserName;
-        var robot;
-        if (robotList[un]!=undefined)
+        res.end(indexPage);
+        return;
+    }
+    if (req.url!="/ask")
+    {
+        res.end("");
+        return;
+    }
+    x.setDefaultResponser(function(content)
+    {
+        res.end("DEFAULT");
+    });
+    var buff=new Buffer(0);
+    req.on("data",function(chunk)
+    {
+        buff=Buffer.concat([buff,chunk]);
+    }).on("end",function()
+    {
+        x.bindOutput(function(content)
         {
-            robot=robotList[un];
-        }
-        else
-        {
-            robot=new Ttyann.Ttyann(un);
-            robotList[un]=robot;
-            robot.setDefaultResponser(function(content)
-            {
-                wechat.send({FromUserName: msg.ToUserName,
-                             ToUserName: msg.FromUserName,
-                             CreateTime: (new Date).getTime(),
-                             MsgType: "text",
-                             Content: "DEFAULT"});
-            });
-        }
-        robot.bindOutput(function(content)
-        {
-            wechat.send({FromUserName: msg.ToUserName,
-                         ToUserName: msg.FromUserName,
-                         CreateTime: (new Date).getTime(),
-                         MsgType: "text",
-                         Content: content});
+            res.writeHead(200,{"content-type": "text/html;charset=utf-8"});
+            res.end(content);
         });
-        robot.tell(msg.Content);
+        var w=buff.toString("utf8");
+        w=qs.parse(w);
+        x.tell(w.ask);
+    }).on("error",function(err)
+    {
+        console.log(err);
     });
 });
 
-server.listen(80);
-
-
-
-                                    
-
-
-        
+server.listen(8011);
