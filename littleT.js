@@ -11,6 +11,7 @@ function FindResponser(content,node,index,stamp,stack,elem)
     node=node || gTree.tree;
     index=index || 0;
     stack=stack || (new Array);
+    var originStack=stack;
     stack=JSON.parse(JSON.stringify(stack));
     var rlt;
     if (index>=content.length)
@@ -19,7 +20,7 @@ function FindResponser(content,node,index,stamp,stack,elem)
         {
             if (!(node["*"]!=undefined && node["*"].responser!=undefined))
             {
-                return {found: false};
+                return {found: false,stack: stack};
             }
             node=node["*"];
         }
@@ -29,18 +30,34 @@ function FindResponser(content,node,index,stamp,stack,elem)
         }
         return {found: true,fn: node.responser,stack: stack};
     }
-    console.log(node);
-    console.log(content[index]);
+    var put=false;
     for (var x in node)
     {
         if (x==content[index])
         {
+            if (node[content[index]]!=undefined && elem)
+            {
+                put=true;
+                stack.push(elem);
+                elem=undefined;
+            }
             rlt=FindResponser(content,node[x],index+1,x,stack);
             if (rlt.found==true)
             {
                 return rlt;
             }
         }
+    }
+    try
+    {
+        if (put)
+        {
+            elem=stack.pop();
+        }
+    }
+    catch (e)
+    {
+        //
     }
     if (node["?"]!=undefined)
     {
@@ -53,17 +70,17 @@ function FindResponser(content,node,index,stamp,stack,elem)
     }
     if (stamp=="*")
     {
-        elem+=content[index];
-        if (node[content[index+1]]!=undefined)
+        if (!elem)
         {
-            stack.push(elem);
-            elem=undefined;
+            elem=new String;
         }
+        elem+=content[index];
         rlt=FindResponser(content,node,index+1,"*",stack,elem);
         if (rlt.found==true)
         {
             return rlt;
         }
+        
     }
     if (node["*"]!=undefined)
     {
@@ -75,7 +92,7 @@ function FindResponser(content,node,index,stamp,stack,elem)
             return rlt;
         }
     }
-    return {found: false};
+    return {found: false,stack: stack};
 }
 
 

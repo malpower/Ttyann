@@ -51,6 +51,9 @@ Ttyann.addGrammer("我叫*",function(content,person,res,finder,args)
 });
 Ttyann.addGrammer("*是*",function(content,person,res,finder,args)
 {
+    console.log("---------");
+    console.log(args);
+    console.log("*********");
     if (args.length!=2)
     {
         res.response("是什么呀！！");
